@@ -30,13 +30,22 @@ import dev.dejvokep.boostedyaml.settings.updater.UpdaterSettings;
 
 import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.objects.managers.AccountLinkManager;
+import github.scarsz.discordsrv.util.LangUtil;
+import github.scarsz.discordsrv.util.MessageUtil;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.apache.commons.lang3.StringUtils;
+
 
 import org.bstats.bukkit.Metrics;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -104,6 +113,7 @@ public class DiscordSRVOAuth extends JavaPlugin implements Listener {
 
         getServer().getPluginManager().registerEvents(this, this);
         getCommand("discordsrvoauth").setExecutor(this);
+        getCommand("discord").setExecutor(this);
     }
 
     @Override
@@ -164,8 +174,59 @@ public class DiscordSRVOAuth extends JavaPlugin implements Listener {
 
                 return true;
             }
-        }
+        } else if (cmd.getName().equalsIgnoreCase("discord")) {
+            if (args.length > 0 && args[0].equalsIgnoreCase("link")) {
+                if (!(sender instanceof Player)) {
+                    sender.sendMessage(LangUtil.InternalMessage.PLAYER_ONLY_COMMAND.toString());
+                    return true;
+                }
 
+                Player player = (Player) sender;
+                AccountLinkManager manager = DiscordSRV.getPlugin().getAccountLinkManager();
+
+                if (manager == null) {
+                    MessageUtil.sendMessage(sender, LangUtil.Message.UNABLE_TO_LINK_ACCOUNTS_RIGHT_NOW.toString());
+                    return true;
+                }
+
+                DiscordSRV.getPlugin().getScheduler().runTaskAsynchronously(() -> {
+                    if (manager.getDiscordId(player.getUniqueId()) != null) {
+                        MessageUtil.sendMessage(sender, LangUtil.Message.ACCOUNT_ALREADY_LINKED.toString());
+                    } else {
+                        String code = manager.generateCode(player.getUniqueId());
+
+                        String message = LangUtil.Message.CODE_GENERATED.toString()
+                                .replace("%code%", code)
+                                .replace("%botname%", DiscordSRV.getPlugin().getMainGuild().getSelfMember().getEffectiveName());
+                        message = github.scarsz.discordsrv.util.PlaceholderUtil.replacePlaceholders(message, Bukkit.getOfflinePlayer(player.getUniqueId()));
+                        Component component = LegacyComponentSerializer.builder().character('&').extractUrls().build().deserialize(message);
+
+                        String clickToCopyCode = LangUtil.Message.CLICK_TO_COPY_CODE.toString();
+                        if (StringUtils.isNotBlank(clickToCopyCode)) {
+                            component = component.clickEvent(ClickEvent.copyToClipboard(code))
+                                    .hoverEvent(HoverEvent.showText(
+                                            LegacyComponentSerializer.legacy('&').deserialize(clickToCopyCode)
+                                    ));
+                        }
+
+                        MessageUtil.sendMessage(sender, component);
+
+                        String authLinkMessage = config.getString("kick_message")
+                                .replaceAll("&", "§")
+                                .replace("{JOIN}", Utils.getBaseURL(config, true) + "/" + config.getString("link_route") + "?code=" + code)
+                                .replace("{KICK}", Utils.getBaseURL(config, false) + "/" + config.getString("link_route") + "?code=" + code);
+
+                        try {
+                            Class.forName("net.kyori.adventure.text.minimessage.MiniMessage");
+                            sender.sendMessage(MiniMessage.miniMessage().deserialize(authLinkMessage));
+                        } catch (Exception e) {
+                            sender.sendMessage(authLinkMessage);
+                        }
+                    }
+                });
+                return true;
+            }
+        }
         return false;
     }
 
@@ -177,39 +238,16 @@ public class DiscordSRVOAuth extends JavaPlugin implements Listener {
                 && args.length == 1) {
             return Arrays.asList("reload");
         }
-
+        if (command.getName().equalsIgnoreCase("discord") && args.length == 1 && "link".startsWith(args[0].toLowerCase())) {
+            return Arrays.asList("link");
+        }
         return null;
     }
 
     @SuppressWarnings("deprecation")
     @EventHandler(ignoreCancelled = true)
     public void onPlayerJoin(AsyncPlayerPreLoginEvent event) {
-        AccountLinkManager accountLinkManager = DiscordSRV.getPlugin().getAccountLinkManager();
-        if (accountLinkManager == null) return;
-
-        UUID playerUuid = event.getUniqueId();
-        String discordId = accountLinkManager.getDiscordIdBypassCache(playerUuid);
-
-        if (discordId == null) {
-            String code = accountLinkManager.generateCode(playerUuid);
-            String route = "/" + config.getString("link_route") + "?code=" + code;
-
-            String kickMessage =
-                    config.getString("kick_message")
-                            .replaceAll("&", "§")
-                            .replace("{JOIN}", Utils.getBaseURL(config, true) + route)
-                            .replace("{KICK}", Utils.getBaseURL(config, false) + route);
-
-            try {
-                Class.forName("net.kyori.adventure.text.minimessage.MiniMessage");
-
-                event.disallow(
-                        AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST,
-                        MiniMessage.miniMessage().deserialize(kickMessage));
-            } catch (Exception e) {
-                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST, kickMessage);
-            }
-        }
+        // 刪除此處的踢出邏輯
     }
 
     private void startServer() {
