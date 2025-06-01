@@ -38,11 +38,11 @@ import github.scarsz.discordsrv.util.PlaceholderUtil;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import github.scarsz.discordsrv.dependencies.kyori.adventure.text.minimessage.MiniMessage;
+import github.scarsz.discordsrv.dependencies.kyori.adventure.text.Component;
+import github.scarsz.discordsrv.dependencies.kyori.adventure.text.event.ClickEvent;
+import github.scarsz.discordsrv.dependencies.kyori.adventure.text.event.HoverEvent;
+import github.scarsz.discordsrv.dependencies.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.apache.commons.lang3.StringUtils;
 
 
@@ -107,7 +107,7 @@ public class DiscordSRVOAuth extends JavaPlugin implements Listener {
         if (config.getBoolean("bstats")) new Metrics(this, 22358);
 
         try {
-            Class.forName("net.kyori.adventure.text.minimessage.MiniMessage");
+            Class.forName("github.scarsz.discordsrv.dependencies.kyori.adventure.text.minimessage.MiniMessage");
 
             logger.info("Using MiniMessage for the kick message");
         } catch (Exception e) {
@@ -147,7 +147,7 @@ public class DiscordSRVOAuth extends JavaPlugin implements Listener {
 
                 try {
                     if (!(sender instanceof Player)) throw new Exception();
-                    Class.forName("net.kyori.adventure.text.minimessage.MiniMessage");
+                    Class.forName("github.scarsz.discordsrv.dependencies.kyori.adventure.text.minimessage.MiniMessage");
 
                     sender.sendMessage(
                             MiniMessage.miniMessage().deserialize("\n" + message + "\n"));
@@ -220,7 +220,7 @@ public class DiscordSRVOAuth extends JavaPlugin implements Listener {
                                 .replace("{KICK}", Utils.getBaseURL(config, false) + "/" + config.getString("link_route") + "?code=" + code);
 
                         try {
-                            Class.forName("net.kyori.adventure.text.minimessage.MiniMessage");
+                            Class.forName("github.scarsz.discordsrv.dependencies.kyori.adventure.text.minimessage.MiniMessage");
                             sender.sendMessage(MiniMessage.miniMessage().deserialize(authLinkMessage));
                         } catch (Exception e) {
                             sender.sendMessage(authLinkMessage);
