@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "ru.padow"
-version = "1.0.5"
+version = "1.0.6"
 
 java {
     sourceCompatibility = JavaVersion.toVersion(11)
@@ -28,13 +28,18 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+
+
     compileOnly("com.discordsrv:discordsrv:1.29.0")
+
     compileOnly("org.projectlombok:lombok:1.18.38")
     annotationProcessor("org.projectlombok:lombok:1.18.38")
     implementation("org.bstats:bstats-bukkit:3.1.0")
     implementation("dev.dejvokep:boosted-yaml:1.3.5")
     implementation("dev.dejvokep:boosted-yaml-spigot:1.5")
     implementation("com.github.technicallycoded:FoliaLib:main-SNAPSHOT")
+
+    implementation("org.apache.commons:commons-lang3:3.13.0")
 }
 
 tasks {
@@ -55,6 +60,7 @@ tasks {
         relocate("org.bstats", "ru.padow.discordsrvoauth.relocated.bstats")
         relocate("dev.dejvokep.boostedyaml", "ru.padow.discordsrvoauth.relocated.boostedyaml")
         relocate("com.tcoded.folialib", "ru.padow.discordsrvoauth.relocated.folialib")
+        relocate("net.kyori.adventure", "ru.padow.discordsrvoauth.relocated.adventure")
 
         exclude("LICENSE")
         exclude("META-INF/versions/**")
