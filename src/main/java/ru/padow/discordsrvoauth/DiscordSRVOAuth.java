@@ -32,6 +32,8 @@ import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.objects.managers.AccountLinkManager;
 import github.scarsz.discordsrv.util.LangUtil;
 import github.scarsz.discordsrv.util.MessageUtil;
+import github.scarsz.discordsrv.util.SchedulerUtil;
+import github.scarsz.discordsrv.util.PlaceholderUtil;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -63,6 +65,7 @@ import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -177,7 +180,7 @@ public class DiscordSRVOAuth extends JavaPlugin implements Listener {
         } else if (cmd.getName().equalsIgnoreCase("discord")) {
             if (args.length > 0 && args[0].equalsIgnoreCase("link")) {
                 if (!(sender instanceof Player)) {
-                    sender.sendMessage(LangUtil.InternalMessage.PLAYER_ONLY_COMMAND.toString());
+                    MessageUtil.sendMessage(Collections.singleton(sender), LangUtil.InternalMessage.PLAYER_ONLY_COMMAND.toString());
                     return true;
                 }
 
@@ -185,20 +188,20 @@ public class DiscordSRVOAuth extends JavaPlugin implements Listener {
                 AccountLinkManager manager = DiscordSRV.getPlugin().getAccountLinkManager();
 
                 if (manager == null) {
-                    MessageUtil.sendMessage(sender, LangUtil.Message.UNABLE_TO_LINK_ACCOUNTS_RIGHT_NOW.toString());
+                    MessageUtil.sendMessage(Collections.singleton(sender), LangUtil.Message.UNABLE_TO_LINK_ACCOUNTS_RIGHT_NOW.toString());
                     return true;
                 }
 
-                DiscordSRV.getPlugin().getScheduler().runTaskAsynchronously(() -> {
+                SchedulerUtil.runTaskAsynchronously(DiscordSRV.getPlugin(), () -> {
                     if (manager.getDiscordId(player.getUniqueId()) != null) {
-                        MessageUtil.sendMessage(sender, LangUtil.Message.ACCOUNT_ALREADY_LINKED.toString());
+                        MessageUtil.sendMessage(Collections.singleton(sender), LangUtil.Message.ACCOUNT_ALREADY_LINKED.toString());
                     } else {
                         String code = manager.generateCode(player.getUniqueId());
 
                         String message = LangUtil.Message.CODE_GENERATED.toString()
                                 .replace("%code%", code)
                                 .replace("%botname%", DiscordSRV.getPlugin().getMainGuild().getSelfMember().getEffectiveName());
-                        message = github.scarsz.discordsrv.util.PlaceholderUtil.replacePlaceholders(message, Bukkit.getOfflinePlayer(player.getUniqueId()));
+                        message = PlaceholderUtil.replacePlaceholders(message, Bukkit.getOfflinePlayer(player.getUniqueId()));
                         Component component = LegacyComponentSerializer.builder().character('&').extractUrls().build().deserialize(message);
 
                         String clickToCopyCode = LangUtil.Message.CLICK_TO_COPY_CODE.toString();
@@ -209,7 +212,7 @@ public class DiscordSRVOAuth extends JavaPlugin implements Listener {
                                     ));
                         }
 
-                        MessageUtil.sendMessage(sender, component);
+                        MessageUtil.sendMessage(Collections.singleton(sender), component);
 
                         String authLinkMessage = config.getString("kick_message")
                                 .replaceAll("&", "§")
@@ -247,7 +250,7 @@ public class DiscordSRVOAuth extends JavaPlugin implements Listener {
     @SuppressWarnings("deprecation")
     @EventHandler(ignoreCancelled = true)
     public void onPlayerJoin(AsyncPlayerPreLoginEvent event) {
-        // 刪除此處的踢出邏輯
+
     }
 
     private void startServer() {
